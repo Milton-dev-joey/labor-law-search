@@ -1,0 +1,50 @@
+{
+  "name": "labor-law-search",
+  "version": "1.0.0",
+  "description": "劳动法规检索工具",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron .",
+    "build:win": "electron-builder --win portable",
+    "build:mac": "electron-builder --mac dmg"
+  },
+  "dependencies": {
+    "sql.js-fts5": "^1.4.0"
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.laborlaw.search",
+    "productName": "劳动法规通",
+    "directories": {
+      "output": "dist"
+    },
+    "asarUnpack": [
+      "node_modules/sql.js-fts5/dist/*.wasm"
+    ],
+    "extraResources": [
+      {
+        "from": "../劳动法规通(1)/laws_dev.db",
+        "to": "laws_dev.db"
+      }
+    ],
+    "win": {
+      "target": [
+        {
+          "target": "portable",
+          "arch": [
+            "x64"
+          ]
+        }
+      ]
+    },
+    "mac": {
+      "target": "dmg"
+    },
+    "portable": {
+      "artifactName": "劳动法规通.exe"
+    }
+  }
+}

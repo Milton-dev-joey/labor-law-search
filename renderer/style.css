@@ -1,0 +1,387 @@
+/* ── 基础重置 ── */
+*, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+
+:root {
+  --bg:       #f8fafc;
+  --surface:  #ffffff;
+  --border:   #e2e8f0;
+  --border-l: #f1f5f9;
+  --text:     #1e293b;
+  --text-2:   #64748b;
+  --text-3:   #94a3b8;
+  --primary:  #2563eb;
+  --primary-l:#eff6ff;
+  --accent:   #f59e0b;
+  --mark:     #fef08a;
+  --green:    #16a34a;
+  --green-l:  #f0fdf4;
+  --radius:   10px;
+  --shadow:   0 1px 3px rgba(0,0,0,.06), 0 1px 2px rgba(0,0,0,.04);
+  --shadow-m: 0 4px 12px rgba(0,0,0,.07);
+}
+
+html, body {
+  height: 100%;
+  font-family: -apple-system, 'Segoe UI', 'Microsoft YaHei', 'PingFang SC', sans-serif;
+  font-size: 14px;
+  color: var(--text);
+  background: var(--bg);
+  overflow: hidden;
+  -webkit-font-smoothing: antialiased;
+}
+
+/* ── 顶栏 ── */
+.topbar {
+  position: fixed;
+  top: 0; left: 0; right: 0;
+  height: 54px;
+  background: var(--surface);
+  border-bottom: 1px solid var(--border);
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 0 12px;
+  z-index: 100;
+}
+
+.topbar-drag {
+  -webkit-app-region: drag;
+  position: absolute;
+  inset: 0;
+  z-index: 0;
+}
+
+/* ── 搜索框 ── */
+.search-wrap {
+  position: relative;
+  z-index: 1;
+  flex: 1;
+  max-width: 680px;
+  margin: 0 auto;
+  display: flex;
+  align-items: center;
+  background: var(--bg);
+  border: 1.5px solid var(--border);
+  border-radius: 8px;
+  padding: 0 12px;
+  transition: border-color .2s, box-shadow .2s;
+}
+
+.search-wrap:focus-within {
+  border-color: var(--primary);
+  box-shadow: 0 0 0 3px rgba(37,99,235,.1);
+}
+
+.search-icon {
+  width: 16px;
+  height: 16px;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+
+#searchInput {
+  flex: 1;
+  border: none;
+  outline: none;
+  background: transparent;
+  font-size: 14px;
+  font-family: inherit;
+  color: var(--text);
+  padding: 9px 10px;
+  min-width: 0;
+}
+
+#searchInput::placeholder { color: var(--text-3); }
+
+.clear-btn {
+  display: none;
+  background: none;
+  border: none;
+  cursor: pointer;
+  padding: 4px;
+  border-radius: 4px;
+  color: var(--text-3);
+  flex-shrink: 0;
+}
+.clear-btn svg { width: 14px; height: 14px; display: block; }
+.clear-btn:hover { background: var(--border-l); color: var(--text-2); }
+.clear-btn.show { display: flex; }
+
+/* ── 窗口控制按钮 ── */
+.win-controls {
+  display: flex;
+  gap: 2px;
+  z-index: 1;
+  -webkit-app-region: no-drag;
+}
+.win-controls button {
+  width: 34px;
+  height: 30px;
+  background: none;
+  border: none;
+  cursor: pointer;
+  border-radius: 5px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  color: var(--text-2);
+  transition: background .12s;
+}
+.win-controls button svg { width: 14px; height: 14px; }
+.win-controls button:hover { background: var(--border-l); }
+.win-controls .close-btn:hover { background: #fee2e2; color: #dc2626; }
+
+/* macOS 下隐藏窗口控制按钮 */
+@supports (-webkit-app-region: drag) {
+  /* 保留：两个平台都使用自定义按钮 */
+}
+
+/* ── 主区域 ── */
+main {
+  position: fixed;
+  top: 54px; bottom: 0; left: 0; right: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+  padding: 24px;
+}
+
+main::-webkit-scrollbar { width: 6px; }
+main::-webkit-scrollbar-track { background: transparent; }
+main::-webkit-scrollbar-thumb { background: #d1d5db; border-radius: 3px; }
+main::-webkit-scrollbar-thumb:hover { background: #9ca3af; }
+
+/* ── 欢迎页 ── */
+.welcome {
+  text-align: center;
+  padding: 100px 20px 60px;
+  user-select: none;
+}
+
+.welcome-badge {
+  display: inline-block;
+  font-size: 11px;
+  font-weight: 700;
+  letter-spacing: 1.5px;
+  text-transform: uppercase;
+  color: var(--primary);
+  background: var(--primary-l);
+  padding: 4px 14px;
+  border-radius: 20px;
+  margin-bottom: 20px;
+}
+
+.welcome h1 {
+  font-size: 32px;
+  font-weight: 700;
+  color: var(--text);
+  letter-spacing: -0.5px;
+  margin-bottom: 8px;
+}
+
+.welcome-sub {
+  color: var(--text-3);
+  font-size: 15px;
+  margin-bottom: 36px;
+}
+
+.welcome-hints {
+  display: flex;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+
+.hint-tag {
+  font-size: 13px;
+  color: var(--text-2);
+  background: var(--surface);
+  border: 1px solid var(--border);
+  padding: 6px 16px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all .15s;
+}
+
+.hint-tag:hover {
+  border-color: var(--primary);
+  color: var(--primary);
+  background: var(--primary-l);
+}
+
+/* ── 结果摘要 ── */
+.results-summary {
+  font-size: 13px;
+  color: var(--text-3);
+  margin-bottom: 16px;
+  padding: 0 2px;
+}
+.results-summary b { color: var(--primary); font-weight: 600; }
+
+/* ── 法律卡片 ── */
+.law-card {
+  background: var(--surface);
+  border: 1px solid var(--border);
+  border-radius: var(--radius);
+  margin-bottom: 10px;
+  overflow: hidden;
+  transition: box-shadow .15s;
+}
+
+.law-card:hover { box-shadow: var(--shadow); }
+
+.law-header {
+  display: flex;
+  align-items: flex-start;
+  gap: 10px;
+  padding: 14px 18px;
+  cursor: pointer;
+  user-select: none;
+  transition: background .1s;
+}
+
+.law-header:hover { background: #fafbfc; }
+
+.law-info { flex: 1; min-width: 0; }
+
+.law-title {
+  font-size: 14.5px;
+  font-weight: 600;
+  color: var(--text);
+  line-height: 1.5;
+  margin-bottom: 6px;
+}
+
+.law-meta {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 5px;
+  align-items: center;
+}
+
+.badge {
+  font-size: 11px;
+  padding: 1px 8px;
+  border-radius: 4px;
+  font-weight: 500;
+  line-height: 20px;
+  white-space: nowrap;
+}
+
+.badge-type     { background: var(--primary-l); color: var(--primary); }
+.badge-valid    { background: var(--green-l);   color: var(--green); }
+.badge-modified { background: #fffbeb;          color: #d97706; }
+.badge-office   { color: var(--text-3); font-size: 12px; }
+.badge-date     { color: var(--text-3); font-size: 12px; }
+
+.match-count {
+  font-size: 11px;
+  color: var(--primary);
+  background: var(--primary-l);
+  padding: 2px 10px;
+  border-radius: 12px;
+  font-weight: 600;
+  white-space: nowrap;
+  flex-shrink: 0;
+  margin-top: 2px;
+}
+
+.expand-arrow {
+  width: 16px;
+  height: 16px;
+  color: var(--text-3);
+  flex-shrink: 0;
+  margin-top: 3px;
+  transition: transform .2s ease;
+}
+
+.law-card.open .expand-arrow { transform: rotate(90deg); }
+
+/* ── 条文列表 ── */
+.law-articles {
+  display: none;
+  border-top: 1px solid var(--border-l);
+}
+
+.law-card.open .law-articles { display: block; }
+
+.article-item {
+  display: flex;
+  gap: 12px;
+  padding: 12px 18px;
+  border-bottom: 1px solid var(--border-l);
+  transition: background .1s;
+}
+
+.article-item:last-child { border-bottom: none; }
+.article-item:hover { background: #fcfcfd; }
+
+.article-num {
+  font-size: 13px;
+  font-weight: 600;
+  color: var(--primary);
+  white-space: nowrap;
+  min-width: 52px;
+  padding-top: 1px;
+}
+
+.article-body { flex: 1; min-width: 0; }
+
+.article-chapter {
+  font-size: 11px;
+  color: var(--text-3);
+  margin-bottom: 3px;
+}
+
+.article-text {
+  font-size: 13.5px;
+  color: var(--text-2);
+  line-height: 1.75;
+  word-break: break-all;
+}
+
+.article-text mark {
+  background: var(--mark);
+  color: inherit;
+  border-radius: 2px;
+  padding: 0 1px;
+}
+
+/* ── 空状态 ── */
+.empty-state {
+  text-align: center;
+  padding: 80px 20px;
+  color: var(--text-3);
+}
+.empty-icon { width: 48px; height: 48px; margin-bottom: 16px; }
+.empty-state p { font-size: 15px; margin-bottom: 6px; }
+.empty-hint { font-size: 12px; }
+
+/* ── 加载 ── */
+.loading-state {
+  text-align: center;
+  padding: 60px 20px;
+  color: var(--text-3);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 12px;
+}
+
+.spinner {
+  width: 24px;
+  height: 24px;
+  border: 2.5px solid var(--border);
+  border-top-color: var(--primary);
+  border-radius: 50%;
+  animation: spin .7s linear infinite;
+}
+
+@keyframes spin { to { transform: rotate(360deg); } }
+
+/* ── 响应式 ── */
+@media (max-width: 640px) {
+  .search-wrap { max-width: 100%; }
+  main { padding: 16px; }
+  .welcome { padding: 60px 16px 40px; }
+  .welcome h1 { font-size: 26px; }
+}

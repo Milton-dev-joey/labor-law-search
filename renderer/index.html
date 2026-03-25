@@ -1,0 +1,80 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>劳动法规通</title>
+  <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+  <!-- ── 顶栏：拖动区 + 搜索 ── -->
+  <header class="topbar">
+    <div class="topbar-drag"></div>
+    <div class="search-wrap">
+      <svg class="search-icon" viewBox="0 0 20 20" fill="none">
+        <circle cx="8.5" cy="8.5" r="5.75" stroke="currentColor" stroke-width="1.8"/>
+        <path d="M13 13l4 4" stroke="currentColor" stroke-width="1.8" stroke-linecap="round"/>
+      </svg>
+      <input id="searchInput" type="text" placeholder="搜索劳动法规..." spellcheck="false" autocomplete="off">
+      <button id="clearBtn" class="clear-btn" title="清除">
+        <svg viewBox="0 0 16 16" fill="none"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.5" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+    <!-- Windows 窗口按钮 -->
+    <div class="win-controls">
+      <button onclick="api.win.minimize()" title="最小化">
+        <svg viewBox="0 0 16 16"><path d="M3 8h10" stroke="currentColor" stroke-width="1.2"/></svg>
+      </button>
+      <button onclick="api.win.maximize()" title="最大化">
+        <svg viewBox="0 0 16 16"><rect x="3" y="3" width="10" height="10" rx="1" stroke="currentColor" stroke-width="1.2" fill="none"/></svg>
+      </button>
+      <button class="close-btn" onclick="api.win.close()" title="关闭">
+        <svg viewBox="0 0 16 16"><path d="M4 4l8 8M12 4l-8 8" stroke="currentColor" stroke-width="1.2" stroke-linecap="round"/></svg>
+      </button>
+    </div>
+  </header>
+
+  <!-- ── 主内容区 ── -->
+  <main id="main">
+    <!-- 欢迎页 -->
+    <div id="welcome" class="welcome">
+      <div class="welcome-badge">LaborLaw</div>
+      <h1>劳动法规通</h1>
+      <p class="welcome-sub" id="statsLine">法律法规智能检索</p>
+      <div class="welcome-hints">
+        <span class="hint-tag" data-q="经济补偿金">经济补偿金</span>
+        <span class="hint-tag" data-q="试用期">试用期</span>
+        <span class="hint-tag" data-q="加班工资">加班工资</span>
+        <span class="hint-tag" data-q="年休假">年休假</span>
+        <span class="hint-tag" data-q="工伤认定">工伤认定</span>
+        <span class="hint-tag" data-q="劳动合同">劳动合同</span>
+      </div>
+    </div>
+
+    <!-- 搜索结果 -->
+    <div id="results" class="results" style="display:none">
+      <div id="resultsSummary" class="results-summary"></div>
+      <div id="resultsList" class="results-list"></div>
+    </div>
+
+    <!-- 空状态 -->
+    <div id="empty" class="empty-state" style="display:none">
+      <svg class="empty-icon" viewBox="0 0 48 48" fill="none">
+        <circle cx="22" cy="22" r="14" stroke="#cbd5e1" stroke-width="2.5"/>
+        <path d="M32 32l10 10" stroke="#cbd5e1" stroke-width="2.5" stroke-linecap="round"/>
+      </svg>
+      <p id="emptyText">未找到相关法规</p>
+      <span class="empty-hint">试试其他关键词</span>
+    </div>
+
+    <!-- 加载 -->
+    <div id="loading" class="loading-state" style="display:none">
+      <div class="spinner"></div>
+      <span>检索中...</span>
+    </div>
+  </main>
+
+  <script src="app.js"></script>
+</body>
+</html>
