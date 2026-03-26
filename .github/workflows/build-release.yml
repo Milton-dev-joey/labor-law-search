@@ -1,0 +1,68 @@
+name: Build Windows Release
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  build-windows:
+    runs-on: windows-latest
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.11'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pyinstaller pywebview
+
+      - name: Build executable
+        run: pyinstaller 劳动法规通.spec
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: 劳动法规通-windows
+          path: dist/劳动法规通.exe
+
+      - name: Create/Update Release
+        if: startsWith(github.ref, 'refs/tags/')
+        uses: softprops/action-gh-release@v1
+        with:
+          files: dist/劳动法规通.exe
+          draft: true
+          prerelease: false
+          name: Release ${{ github.ref_name }}
+          body: |
+            ## 劳动法规通 v${{ github.ref_name }}
+
+            ### 下载说明
+            本Release包含两个文件：
+            1. **劳动法规通.exe** - Windows桌面应用（自动构建）
+            2. **laws_dev.db** - 数据库文件（需要手动上传）
+
+            ### 使用方法
+            1. 下载 `劳动法规通.exe` 和 `laws_dev.db`
+            2. 将两个文件放在同一目录
+            3. 双击 `劳动法规通.exe` 运行
+
+            ### 系统要求
+            - Windows 10 或更高版本
+            - 无需安装 Python
+            - 需要安装 WebView2 运行时（Windows 10/11 通常已预装）
+
+            ### 注意事项
+            由于数据库文件较大 (~50MB)，未包含在自动构建中。
+            维护者需要手动上传 `laws_dev.db` 到本Release。
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
