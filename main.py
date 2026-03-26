@@ -44,10 +44,27 @@ def get_db_path():
 class CustomHandler(SimpleHTTPRequestHandler):
     """自定义HTTP处理器，支持从打包目录提供文件"""
 
+    web_root = None  # 类变量
+
     def __init__(self, *args, **kwargs):
-        # 设置文档根目录
-        self.web_root = get_resource_path('web')
-        super().__init__(*args, directory=self.web_root, **kwargs)
+        if CustomHandler.web_root is None:
+            CustomHandler.web_root = get_resource_path('web')
+        super().__init__(*args, directory=CustomHandler.web_root, **kwargs)
+
+    def translate_path(self, path):
+        """重写路径转换，正确处理根路径"""
+        # 调用父类的 translate_path
+        path = super().translate_path(path)
+        # 如果路径是目录，添加 index.html
+        if os.path.isdir(path):
+            path = os.path.join(path, 'index.html')
+        return path
+
+    def guess_type(self, path):
+        """重写MIME类型猜测，添加wasm支持"""
+        if path.endswith('.wasm'):
+            return 'application/wasm'
+        return super().guess_type(path)
 
     def do_GET(self):
         # 处理数据库文件请求
@@ -66,8 +83,32 @@ class CustomHandler(SimpleHTTPRequestHandler):
                 self.end_headers()
                 return
 
+        # 处理根路径
+        if self.path == '/' or self.path == '/index.html':
+            index_path = os.path.join(self.directory, 'index.html')
+            if os.path.exists(index_path):
+                self.send_response(200)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.end_headers()
+                with open(index_path, 'rb') as f:
+                    self.wfile.write(f.read())
+                return
+            else:
+                self.send_response(404)
+                self.send_header('Content-Type', 'text/html; charset=utf-8')
+                self.end_headers()
+                self.wfile.write(b'404 - index.html not found')
+                return
+
         # 默认处理静态文件
-        super().do_GET()
+        try:
+            super().do_GET()
+        except Exception as e:
+            # 如果出错，返回404
+            self.send_response(404)
+            self.send_header('Content-Type', 'text/html; charset=utf-8')
+            self.end_headers()
+            self.wfile.write(f'404 - {self.path} not found'.encode())
 
     def log_message(self, format, *args):
         # 静默HTTP日志
@@ -221,12 +262,27 @@ def show_error_window(expected_path):
 
 def main():
     """主函数"""
+    # 检查web文件夹是否存在
+    web_root = get_resource_path('web')
+    if not os.path.exists(web_root):
+        print(f"错误: 找不到web文件夹: {web_root}")
+        sys.exit(1)
+
+    index_path = os.path.join(web_root, 'index.html')
+    if not os.path.exists(index_path):
+        print(f"错误: 找不到index.html: {index_path}")
+        sys.exit(1)
+
     # 检查数据库
     db_exists, db_path = check_database()
 
     # 启动HTTP服务器
     port = start_server()
-    url = f'http://127.0.0.1:{port}'
+    url = f'http://127.0.0.1:{port}/'
+    print(f"HTTP服务器已启动: {url}")
+    print(f"Web根目录: {web_root}")
+    print(f"数据库路径: {db_path}")
+    print(f"数据库存在: {db_exists}")
 
     # 创建窗口
     if db_exists:
