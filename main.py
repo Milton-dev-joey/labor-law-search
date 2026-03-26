@@ -56,11 +56,20 @@ def get_resource_path(relative_path):
 
 
 def get_db_path():
-    """获取数据库文件路径"""
-    possible_paths = [
-        get_resource_path('laws_dev.db'),
-        os.path.join(os.path.expanduser('~'), '劳动法规通', 'laws_dev.db'),
-    ]
+    """获取数据库文件路径（数据库放在exe所在目录，而非打包资源目录）"""
+    if getattr(sys, 'frozen', False):
+        # 打包后的exe - 数据库在exe所在目录
+        exe_dir = os.path.dirname(sys.executable)
+        possible_paths = [
+            os.path.join(exe_dir, 'laws_dev.db'),
+            os.path.join(os.path.expanduser('~'), '劳动法规通', 'laws_dev.db'),
+        ]
+    else:
+        # 开发环境
+        base_dir = os.path.dirname(os.path.abspath(__file__))
+        possible_paths = [
+            os.path.join(base_dir, 'laws_dev.db'),
+        ]
 
     for path in possible_paths:
         if os.path.exists(path):
