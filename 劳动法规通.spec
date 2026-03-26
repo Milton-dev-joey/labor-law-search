@@ -7,7 +7,12 @@ a = Analysis(
     datas=[
         ('web', 'web'),
     ],
-    hiddenimports=['webview', 'webview.platforms.winforms'],
+    hiddenimports=[
+        'webview',
+        'webview.platforms.winforms',
+        'clr',
+        'pythonnet',
+    ],
     hookspath=[],
     hooksconfig={},
     runtime_hooks=[],

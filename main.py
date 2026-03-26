@@ -9,8 +9,32 @@ import os
 import sys
 import json
 import threading
-import webview
+import traceback
+import time
 from http.server import HTTPServer, SimpleHTTPRequestHandler
+
+# 设置日志文件路径
+LOG_FILE = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__), 'app.log')
+
+def log(msg):
+    """写入日志"""
+    with open(LOG_FILE, 'a', encoding='utf-8') as f:
+        f.write(f"{time.strftime('%Y-%m-%d %H:%M:%S')} - {msg}\n")
+
+# 记录启动信息
+log("=" * 50)
+log("应用启动")
+log(f"Python版本: {sys.version}")
+log(f"可执行文件: {sys.executable}")
+log(f"当前目录: {os.getcwd()}")
+
+try:
+    import webview
+    log("webview导入成功")
+except Exception as e:
+    log(f"webview导入失败: {e}")
+    log(traceback.format_exc())
+    sys.exit(1)
 
 # 全局变量
 httpd = None
@@ -53,9 +77,7 @@ class CustomHandler(SimpleHTTPRequestHandler):
 
     def translate_path(self, path):
         """重写路径转换，正确处理根路径"""
-        # 调用父类的 translate_path
         path = super().translate_path(path)
-        # 如果路径是目录，添加 index.html
         if os.path.isdir(path):
             path = os.path.join(path, 'index.html')
         return path
@@ -67,72 +89,82 @@ class CustomHandler(SimpleHTTPRequestHandler):
         return super().guess_type(path)
 
     def do_GET(self):
-        # 处理数据库文件请求
-        if self.path == '/laws_dev.db':
-            db_path = get_db_path()
-            if os.path.exists(db_path):
-                self.send_response(200)
-                self.send_header('Content-Type', 'application/x-sqlite3')
-                self.send_header('Access-Control-Allow-Origin', '*')
-                self.end_headers()
-                with open(db_path, 'rb') as f:
-                    self.wfile.write(f.read())
-                return
-            else:
-                self.send_response(404)
-                self.end_headers()
-                return
-
-        # 处理根路径
-        if self.path == '/' or self.path == '/index.html':
-            index_path = os.path.join(self.directory, 'index.html')
-            if os.path.exists(index_path):
-                self.send_response(200)
-                self.send_header('Content-Type', 'text/html; charset=utf-8')
-                self.end_headers()
-                with open(index_path, 'rb') as f:
-                    self.wfile.write(f.read())
-                return
-            else:
-                self.send_response(404)
-                self.send_header('Content-Type', 'text/html; charset=utf-8')
-                self.end_headers()
-                self.wfile.write(b'404 - index.html not found')
-                return
-
-        # 默认处理静态文件
         try:
+            # 处理数据库文件请求
+            if self.path == '/laws_dev.db':
+                db_path = get_db_path()
+                if os.path.exists(db_path):
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'application/x-sqlite3')
+                    self.send_header('Access-Control-Allow-Origin', '*')
+                    self.end_headers()
+                    with open(db_path, 'rb') as f:
+                        self.wfile.write(f.read())
+                    return
+                else:
+                    self.send_response(404)
+                    self.end_headers()
+                    return
+
+            # 处理根路径
+            if self.path in ('/', '/index.html'):
+                index_path = os.path.join(self.directory, 'index.html')
+                if os.path.exists(index_path):
+                    self.send_response(200)
+                    self.send_header('Content-Type', 'text/html; charset=utf-8')
+                    self.end_headers()
+                    with open(index_path, 'rb') as f:
+                        self.wfile.write(f.read())
+                    return
+                else:
+                    self.send_response(404)
+                    self.send_header('Content-Type', 'text/html; charset=utf-8')
+                    self.end_headers()
+                    self.wfile.write(b'404 - index.html not found')
+                    return
+
+            # 默认处理静态文件
             super().do_GET()
         except Exception as e:
-            # 如果出错，返回404
-            self.send_response(404)
+            log(f"HTTP错误: {e}")
+            self.send_response(500)
             self.send_header('Content-Type', 'text/html; charset=utf-8')
             self.end_headers()
-            self.wfile.write(f'404 - {self.path} not found'.encode())
+            self.wfile.write(f'500 - Internal Error: {e}'.encode())
 
     def log_message(self, format, *args):
-        # 静默HTTP日志
-        pass
+        log(f"HTTP: {args[0] if args else ''}")
 
 
 def start_server(port=0):
     """启动HTTP服务器，返回实际端口"""
     global httpd
-    httpd = HTTPServer(('127.0.0.1', port), CustomHandler)
-    actual_port = httpd.server_address[1]
+    try:
+        httpd = HTTPServer(('127.0.0.1', port), CustomHandler)
+        actual_port = httpd.server_address[1]
+        log(f"HTTP服务器已启动，端口: {actual_port}")
 
-    def serve():
-        httpd.serve_forever()
+        def serve():
+            try:
+                httpd.serve_forever()
+            except Exception as e:
+                log(f"HTTP服务器错误: {e}")
 
-    global server_thread
-    server_thread = threading.Thread(target=serve, daemon=True)
-    server_thread.start()
-    return actual_port
+        global server_thread
+        server_thread = threading.Thread(target=serve, daemon=True)
+        server_thread.start()
+        log("HTTP服务器线程已启动")
+        return actual_port
+    except Exception as e:
+        log(f"启动HTTP服务器失败: {e}")
+        log(traceback.format_exc())
+        raise
 
 
 def check_database():
     """检查数据库文件是否存在"""
     db_path = get_db_path()
+    log(f"数据库路径: {db_path}, 存在: {os.path.exists(db_path)}")
     if not os.path.exists(db_path):
         return False, db_path
     return True, db_path
@@ -140,7 +172,7 @@ def check_database():
 
 def show_error_window(expected_path):
     """显示数据库缺失错误窗口"""
-    error_html = f'''
+    return f'''
     <!DOCTYPE html>
     <html lang="zh-CN">
     <head>
@@ -224,9 +256,6 @@ def show_error_window(expected_path):
                 text-align: center;
                 margin-top: 20px;
             }}
-            .btn:hover {{
-                opacity: 0.9;
-            }}
         </style>
     </head>
     <body>
@@ -257,58 +286,74 @@ def show_error_window(expected_path):
     </body>
     </html>
     '''
-    return error_html
 
 
 def main():
     """主函数"""
-    # 检查web文件夹是否存在
-    web_root = get_resource_path('web')
-    if not os.path.exists(web_root):
-        print(f"错误: 找不到web文件夹: {web_root}")
-        sys.exit(1)
+    try:
+        log("开始初始化...")
 
-    index_path = os.path.join(web_root, 'index.html')
-    if not os.path.exists(index_path):
-        print(f"错误: 找不到index.html: {index_path}")
-        sys.exit(1)
+        # 检查web文件夹是否存在
+        web_root = get_resource_path('web')
+        log(f"Web根目录: {web_root}")
 
-    # 检查数据库
-    db_exists, db_path = check_database()
+        if not os.path.exists(web_root):
+            msg = f"错误: 找不到web文件夹: {web_root}"
+            log(msg)
+            raise FileNotFoundError(msg)
 
-    # 启动HTTP服务器
-    port = start_server()
-    url = f'http://127.0.0.1:{port}/'
-    print(f"HTTP服务器已启动: {url}")
-    print(f"Web根目录: {web_root}")
-    print(f"数据库路径: {db_path}")
-    print(f"数据库存在: {db_exists}")
+        index_path = os.path.join(web_root, 'index.html')
+        if not os.path.exists(index_path):
+            msg = f"错误: 找不到index.html: {index_path}"
+            log(msg)
+            raise FileNotFoundError(msg)
 
-    # 创建窗口
-    if db_exists:
-        # 正常启动
-        window = webview.create_window(
-            title='劳动法规通',
-            url=url,
-            width=1400,
-            height=900,
-            min_size=(1000, 600),
-            text_select=True
-        )
-    else:
-        # 显示错误页面
-        error_html = show_error_window(db_path)
-        window = webview.create_window(
-            title='劳动法规通 - 数据库缺失',
-            html=error_html,
-            width=600,
-            height=500,
-            resizable=False
-        )
+        log(f"index.html存在: {index_path}")
 
-    # 启动应用
-    webview.start(debug=False)
+        # 检查数据库
+        db_exists, db_path = check_database()
+
+        # 启动HTTP服务器
+        port = start_server()
+        url = f'http://127.0.0.1:{port}/'
+        log(f"HTTP服务器URL: {url}")
+
+        # 创建窗口
+        if db_exists:
+            log("创建主窗口...")
+            window = webview.create_window(
+                title='劳动法规通',
+                url=url,
+                width=1400,
+                height=900,
+                min_size=(1000, 600),
+                text_select=True
+            )
+        else:
+            log("创建错误窗口...")
+            error_html = show_error_window(db_path)
+            window = webview.create_window(
+                title='劳动法规通 - 数据库缺失',
+                html=error_html,
+                width=600,
+                height=500,
+                resizable=False
+            )
+
+        log("启动webview...")
+        webview.start(debug=False)
+        log("webview已关闭")
+
+    except Exception as e:
+        log(f"主程序错误: {e}")
+        log(traceback.format_exc())
+        raise
 
 
 if __name__ == '__main__':
-    main()
+    try:
+        main()
+    except Exception as e:
+        log(f"程序崩溃: {e}")
+        log(traceback.format_exc())
+        sys.exit(1)
