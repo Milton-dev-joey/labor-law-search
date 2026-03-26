@@ -13,8 +13,11 @@ import traceback
 import time
 from http.server import HTTPServer, SimpleHTTPRequestHandler
 
-# 设置日志文件路径
-LOG_FILE = os.path.join(os.path.dirname(sys.executable if getattr(sys, 'frozen', False) else __file__), 'app.log')
+# 设置日志文件路径（exe所在目录，而非临时目录）
+if getattr(sys, 'frozen', False):
+    LOG_FILE = os.path.join(os.path.dirname(sys.executable), 'app.log')
+else:
+    LOG_FILE = os.path.join(os.path.dirname(__file__), 'app.log')
 
 def log(msg):
     """写入日志"""
@@ -44,8 +47,8 @@ server_thread = None
 def get_resource_path(relative_path):
     """获取资源路径（支持打包后的exe）"""
     if getattr(sys, 'frozen', False):
-        # 打包后的exe运行
-        base_path = os.path.dirname(sys.executable)
+        # 打包后的exe运行 - PyInstaller会将资源解压到sys._MEIPASS
+        base_path = sys._MEIPASS
     else:
         # 开发环境运行
         base_path = os.path.dirname(os.path.abspath(__file__))
